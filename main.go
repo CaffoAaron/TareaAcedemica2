@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type knnNode struct {
-	distancia float64
+	Distancia float64
 	x         int
 	y         int
 	estado    string
@@ -138,21 +140,70 @@ func getEstado(p *ConsultaBono) {
 	}
 }
 
+func proccesofChossing(k *knnNode, x int, y int, p ConsultaBono) {
+	absX := math.Abs(float64(x - p.PuntajeEmpresa))
+	absY := math.Abs(float64(y - p.PuntajePersonal))
+	distancia := math.Sqrt(math.Pow(absX, 2) + math.Pow(absY, 2))
+	k.Distancia = distancia
+	k.x = p.PuntajeEmpresa
+	k.y = p.PuntajePersonal
+	k.estado = p.Estado
+}
+
+func knn(usuario *ConsultaBono) {
+	var getPoints = [100]knnNode{}
+
+	for i := 0; i < 100; i++ {
+		go proccesofChossing(&getPoints[i], usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
+		time.Sleep(30)
+	}
+	log.Println(getPoints)
+	for i := 1; i < 100; i++ {
+		for j := 0; j < 100-i; j++ {
+			if getPoints[j].Distancia > getPoints[j+1].Distancia {
+
+				getPoints[j], getPoints[j+1] = getPoints[j+1], getPoints[j]
+			}
+		}
+	}
+	count := 0
+	for i := 0; i < 6; i++ {
+		if getPoints[i].estado == "Pre-Aprobado" {
+			count++
+		}
+	}
+	if count > 3 {
+		log.Println("Usted esta preaprobado para el bono independiente")
+	} else {
+		log.Println("Usted no esta apto para el bono independiente")
+	}
+}
+
 func mostrarDataset(res http.ResponseWriter, req *http.Request) {
 	log.Println("Llamada al endpoint /dataset")
-	log.Println(Dataset)
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
-	log.Println(string(jsonBytes))
 	io.WriteString(res, string(jsonBytes))
 }
 
 func realizarKnn(res http.ResponseWriter, req *http.Request) {
 	log.Println("Llamada al endpoint /knn")
+	var usuario = ConsultaBono{}
+	usuario.Hijos = true
+	usuario.CarreraUniversitaria = true
+	usuario.CasaPropia = true
+	usuario.OtroPrestamo = false
+	usuario.Mas_4_Años = true
+	usuario.Mas_1_Local = true
+	usuario.Mas_10_Empleados = true
+	usuario.PagoIgv_6_Meses = true
+	usuario.DeclaronConfidencialPatrimonio = true
+	getEstado(&usuario)
+	knn(&usuario)
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
-	jsonBytes2, _ := json.MarshalIndent(Dataset, "", "\t")
-	log.Println(string(jsonBytes2))
-	io.WriteString(res, string(jsonBytes2))
+	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
+	log.Println(string(jsonBytes))
+	io.WriteString(res, string(jsonBytes))
 }
 
 func handleRequest() {
