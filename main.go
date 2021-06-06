@@ -20,6 +20,10 @@ type knnNode struct {
 	estado    string
 }
 
+type Respuesta struct {
+	Mensaje string
+}
+
 type ConsultaBono struct {
 	Casado                         bool `json:"casado"`
 	Hijos                          bool `json:"hijos"`
@@ -150,7 +154,7 @@ func proccesofChossing(k *knnNode, x int, y int, p ConsultaBono) {
 	k.estado = p.Estado
 }
 
-func knn(usuario *ConsultaBono) {
+func knn(usuario *ConsultaBono) bool {
 	var getPoints = [100]knnNode{}
 
 	for i := 0; i < 100; i++ {
@@ -172,10 +176,12 @@ func knn(usuario *ConsultaBono) {
 			count++
 		}
 	}
-	if count > 3 {
+	if count >= 3 {
 		log.Println("Usted esta preaprobado para el bono independiente")
+		return true
 	} else {
 		log.Println("Usted no esta apto para el bono independiente")
+		return false
 	}
 }
 
@@ -188,7 +194,9 @@ func mostrarDataset(res http.ResponseWriter, req *http.Request) {
 
 func realizarKnn(res http.ResponseWriter, req *http.Request) {
 	log.Println("Llamada al endpoint /knn")
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	var usuario = ConsultaBono{}
+	var respuesta = Respuesta{}
 	usuario.Hijos = true
 	usuario.CarreraUniversitaria = true
 	usuario.CasaPropia = true
@@ -199,10 +207,13 @@ func realizarKnn(res http.ResponseWriter, req *http.Request) {
 	usuario.PagoIgv_6_Meses = true
 	usuario.DeclaronConfidencialPatrimonio = true
 	getEstado(&usuario)
-	knn(&usuario)
-	res.Header().Set("Content-Type", "application/json; charset=utf-8")
-	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
-	log.Println(string(jsonBytes))
+	RespuestaKnn := knn(&usuario)
+	if RespuestaKnn == true {
+		respuesta.Mensaje = "Usted esta preaprobado para el bono independiente"
+	} else {
+		respuesta.Mensaje = "Usted no esta apto para el bono independiente"
+	}
+	jsonBytes, _ := json.MarshalIndent(respuesta, "", "\t")
 	io.WriteString(res, string(jsonBytes))
 }
 
