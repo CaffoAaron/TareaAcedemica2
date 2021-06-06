@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 )
@@ -17,16 +19,16 @@ type knnNode struct {
 }
 
 type ConsultaBono struct {
-	Casado                         bool `json:"fever"`
-	Hijos                          bool `json:"tiredness"`
-	CarreraUniversitaria           bool `json:"dryCough"`
-	CasaPropia                     bool `json:"difficultyBrithing"`
-	OtroPrestamo                   bool `json:"difficultyBrithing"`
-	Mas_4_Años                     bool `json:"soreThroat"`
-	Mas_1_Local                    bool `json:"noneSymtons"`
-	Mas_10_Empreados               bool `json:"age0_9"`
-	PagoIgv_6_Meses                bool `json:"age10_19"`
-	DeclaronConfidencialPatrimonio bool `json:"age20_24"`
+	Casado                         bool `json:"casado"`
+	Hijos                          bool `json:"hijos"`
+	CarreraUniversitaria           bool `json:"carrera_universitaria"`
+	CasaPropia                     bool `json:"casa_propia"`
+	OtroPrestamo                   bool `json:"otro_prestamo"`
+	Mas_4_Años                     bool `json:"mas_de_4_Años_como_empresa"`
+	Mas_1_Local                    bool `json:"mas_de_1_Local"`
+	Mas_10_Empleados               bool `json:"mas_de_10_Empleados"`
+	PagoIgv_6_Meses                bool `json:"Pago_de_Igv_Ultimos_6_Meses"`
+	DeclaronConfidencialPatrimonio bool `json:"declaron_confidencial_patrimonio"`
 
 	PuntajePersonal int
 	PuntajeEmpresa  int
@@ -74,7 +76,7 @@ func LeerDataSet() {
 		Dataset[i].Mas_1_Local = Mas_1_Local
 
 		Mas_10_Empreados, _ := strconv.ParseBool(record[7])
-		Dataset[i].Mas_10_Empreados = Mas_10_Empreados
+		Dataset[i].Mas_10_Empleados = Mas_10_Empreados
 
 		PagoIgv_6_Meses, _ := strconv.ParseBool(record[8])
 		Dataset[i].PagoIgv_6_Meses = PagoIgv_6_Meses
@@ -114,7 +116,7 @@ func getEstado(p *ConsultaBono) {
 	if p.Mas_1_Local == true {
 		contEmpresa += 4
 	}
-	if p.Mas_10_Empreados == true {
+	if p.Mas_10_Empleados == true {
 		contEmpresa += 4
 
 	}
@@ -136,6 +138,32 @@ func getEstado(p *ConsultaBono) {
 	}
 }
 
+func mostrarDataset(res http.ResponseWriter, req *http.Request) {
+	log.Println("Llamada al endpoint /dataset")
+	log.Println(Dataset)
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
+	log.Println(string(jsonBytes))
+	io.WriteString(res, string(jsonBytes))
+}
+
+func realizarKnn(res http.ResponseWriter, req *http.Request) {
+	log.Println("Llamada al endpoint /knn")
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	jsonBytes2, _ := json.MarshalIndent(Dataset, "", "\t")
+	log.Println(string(jsonBytes2))
+	io.WriteString(res, string(jsonBytes2))
+}
+
+func handleRequest() {
+
+	http.HandleFunc("/dataset", mostrarDataset)
+	http.HandleFunc("/knn", realizarKnn)
+	log.Fatal(http.ListenAndServe(":9000", nil))
+
+}
+
 func main() {
 	LeerDataSet()
+	handleRequest()
 }
