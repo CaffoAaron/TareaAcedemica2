@@ -43,6 +43,59 @@ type ConsultaBono struct {
 
 var Dataset = [1000]ConsultaBono{}
 
+func LeerDataSetFromGit() {
+	response, err := http.Get("https://raw.githubusercontent.com/CaffoAaron/DataSet-Programaci-n-Concurrente-y-Distribuida/master/bono_Independiente_trabajaperu.csv") //use package "net/http"
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer response.Body.Close()
+	reader := csv.NewReader(response.Body)
+	reader.Comma = ','
+	data, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println(nil)
+	}
+	fmt.Println(data)
+
+	for i, row := range data {
+
+		Casado, _ := strconv.ParseBool(row[0])
+		Dataset[i].Casado = Casado
+
+		Hijos, _ := strconv.ParseBool(row[1])
+		Dataset[i].Hijos = Hijos
+
+		CarreraUniversitaria, _ := strconv.ParseBool(row[2])
+		Dataset[i].CarreraUniversitaria = CarreraUniversitaria
+
+		CasaPropia, _ := strconv.ParseBool(row[3])
+		Dataset[i].CasaPropia = CasaPropia
+
+		OtroPrestamo, _ := strconv.ParseBool(row[4])
+		Dataset[i].OtroPrestamo = OtroPrestamo
+
+		Mas_4_Años, _ := strconv.ParseBool(row[5])
+		Dataset[i].Mas_4_Años = Mas_4_Años
+
+		Mas_1_Local, _ := strconv.ParseBool(row[6])
+		Dataset[i].Mas_1_Local = Mas_1_Local
+
+		Mas_10_Empreados, _ := strconv.ParseBool(row[7])
+		Dataset[i].Mas_10_Empleados = Mas_10_Empreados
+
+		PagoIgv_6_Meses, _ := strconv.ParseBool(row[8])
+		Dataset[i].PagoIgv_6_Meses = PagoIgv_6_Meses
+
+		DeclaronConfidencialPatrimonio, _ := strconv.ParseBool(row[9])
+		Dataset[i].DeclaronConfidencialPatrimonio = DeclaronConfidencialPatrimonio
+	}
+	for i := 0; i < 1000; i++ {
+		getEstado(&Dataset[i])
+	}
+	log.Println(Dataset)
+}
+
 func LeerDataSet() {
 	data := "bono_Independiente_trabajaperu.csv"
 	var i = 0
@@ -92,7 +145,7 @@ func LeerDataSet() {
 
 		i++
 	}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1000; i++ {
 		getEstado(&Dataset[i])
 	}
 	log.Println(Dataset)
@@ -165,11 +218,11 @@ func knn(usuario *ConsultaBono) bool {
 	for i := 1; i < 100; i++ {
 		for j := 0; j < 100-i; j++ {
 			if getPoints[j].Distancia > getPoints[j+1].Distancia {
-
 				getPoints[j], getPoints[j+1] = getPoints[j+1], getPoints[j]
 			}
 		}
 	}
+	log.Println(getPoints)
 	count := 0
 	for i := 0; i < 6; i++ {
 		if getPoints[i].estado == "Pre-Aprobado" {
@@ -221,11 +274,12 @@ func handleRequest() {
 
 	http.HandleFunc("/dataset", mostrarDataset)
 	http.HandleFunc("/knn", realizarKnn)
-	log.Fatal(http.ListenAndServe(":9000", nil))
+	log.Fatal(http.ListenAndServe(":9900", nil))
 
 }
 
 func main() {
-	LeerDataSet()
+	LeerDataSetFromGit()
+	//LeerDataSet()
 	handleRequest()
 }
