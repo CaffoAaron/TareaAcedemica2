@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -239,28 +240,99 @@ func knn(usuario *ConsultaBono) bool {
 }
 
 func mostrarDataset(res http.ResponseWriter, req *http.Request) {
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
 	log.Println("Llamada al endpoint /dataset")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	res.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	res.Header().Set("Access-Control-Expose-Headers", "Authorization")
 	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
 	io.WriteString(res, string(jsonBytes))
 }
 
 func realizarKnn(res http.ResponseWriter, req *http.Request) {
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
 	log.Println("Llamada al endpoint /knn")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	res.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	res.Header().Set("Access-Control-Expose-Headers", "Authorization")
 	var usuario = ConsultaBono{}
 	var respuesta = Respuesta{}
-	usuario.Hijos = true
-	usuario.CarreraUniversitaria = true
-	usuario.CasaPropia = true
-	usuario.OtroPrestamo = false
-	usuario.Mas_4_Años = true
-	usuario.Mas_1_Local = true
-	usuario.Mas_10_Empleados = true
-	usuario.PagoIgv_6_Meses = true
-	usuario.DeclaronConfidencialPatrimonio = true
+	body, _ := ioutil.ReadAll(req.Body)
+
+	casado := req.FormValue("casado")
+	hijos := req.FormValue("hijos")
+	carrera_universitaria := req.FormValue("carrera_universitaria")
+	casa_propia := req.FormValue("casa_propia")
+	otro_prestamo := req.FormValue("otro_prestamo")
+
+	mas_de_4_Años_como_empresa := req.FormValue("mas_de_4_Años_como_empresa")
+	mas_de_1_Local := req.FormValue("mas_de_1_Local")
+	mas_de_10_Empleados := req.FormValue("mas_de_10_Empleados")
+	Pago_de_Igv_Ultimos_6_Meses := req.FormValue("Pago_de_Igv_Ultimos_6_Meses")
+	declaron_confidencial_patrimonio := req.FormValue("declaron_confidencial_patrimonio")
+
+	if casado == "No" {
+		usuario.Casado = false
+	} else {
+		usuario.Casado = true
+	}
+	if hijos == "No" {
+		usuario.Hijos = false
+	} else {
+		usuario.Hijos = true
+
+	}
+	if carrera_universitaria == "No" {
+		usuario.CarreraUniversitaria = false
+
+	} else {
+		usuario.CarreraUniversitaria = true
+	}
+	if casa_propia == "No" {
+		usuario.CasaPropia = false
+	} else {
+		usuario.CasaPropia = true
+	}
+	if otro_prestamo == "No" {
+		usuario.OtroPrestamo = false
+	} else {
+		usuario.OtroPrestamo = true
+	}
+
+	if mas_de_4_Años_como_empresa == "No" {
+		usuario.Mas_4_Años = false
+	} else {
+		usuario.Mas_4_Años = true
+	}
+	if mas_de_1_Local == "No" {
+		usuario.Mas_1_Local = false
+	} else {
+		usuario.Mas_1_Local = true
+	}
+	if mas_de_10_Empleados == "No" {
+		usuario.Mas_10_Empleados = false
+	} else {
+		usuario.Mas_10_Empleados = true
+	}
+	if Pago_de_Igv_Ultimos_6_Meses == "No" {
+		usuario.PagoIgv_6_Meses = false
+	} else {
+		usuario.PagoIgv_6_Meses = true
+	}
+	if declaron_confidencial_patrimonio == "No" {
+		usuario.DeclaronConfidencialPatrimonio = false
+	} else {
+		usuario.DeclaronConfidencialPatrimonio = true
+	}
+
+	log.Println("response Body:", string(body))
+
 	getEstado(&usuario)
 	RespuestaKnn := knn(&usuario)
 	if RespuestaKnn == true {
