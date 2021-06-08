@@ -241,6 +241,7 @@ func knn(usuario *ConsultaBono) bool {
 func mostrarDataset(res http.ResponseWriter, req *http.Request) {
 	log.Println("Llamada al endpoint /dataset")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	jsonBytes, _ := json.MarshalIndent(Dataset, "", "\t")
 	io.WriteString(res, string(jsonBytes))
 }
@@ -248,6 +249,7 @@ func mostrarDataset(res http.ResponseWriter, req *http.Request) {
 func realizarKnn(res http.ResponseWriter, req *http.Request) {
 	log.Println("Llamada al endpoint /knn")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	var usuario = ConsultaBono{}
 	var respuesta = Respuesta{}
 	usuario.Hijos = true
@@ -274,7 +276,7 @@ func handleRequest() {
 
 	http.HandleFunc("/dataset", mostrarDataset)
 	http.HandleFunc("/knn", realizarKnn)
-	log.Fatal(http.ListenAndServe(":9900", nil))
+	log.Fatal(http.ListenAndServe(":9000", nil))
 
 }
 
