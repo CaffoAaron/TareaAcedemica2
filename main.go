@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 )
 
 type knnNode struct {
@@ -198,7 +196,7 @@ func getEstado(p *ConsultaBono) {
 	}
 }
 
-func proccesofChossing(k *knnNode, x int, y int, p ConsultaBono) {
+func calculaDistancia(k *knnNode, x int, y int, p ConsultaBono) {
 	absX := math.Abs(float64(x - p.PuntajeEmpresa))
 	absY := math.Abs(float64(y - p.PuntajePersonal))
 	distancia := math.Sqrt(math.Pow(absX, 2) + math.Pow(absY, 2))
@@ -212,8 +210,7 @@ func knn(usuario *ConsultaBono) bool {
 	var getPoints = [100]knnNode{}
 
 	for i := 0; i < 100; i++ {
-		go proccesofChossing(&getPoints[i], usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
-		time.Sleep(30)
+		calculaDistancia(&getPoints[i], usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
 	}
 	log.Println(getPoints)
 	for i := 1; i < 100; i++ {
@@ -263,8 +260,7 @@ func realizarKnn(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Expose-Headers", "Authorization")
 	var usuario = ConsultaBono{}
 	var respuesta = Respuesta{}
-	body, _ := ioutil.ReadAll(req.Body)
-
+	//body, _ := ioutil.ReadAll(req.Body)
 	casado := req.FormValue("casado")
 	hijos := req.FormValue("hijos")
 	carrera_universitaria := req.FormValue("carrera_universitaria")
@@ -331,7 +327,7 @@ func realizarKnn(res http.ResponseWriter, req *http.Request) {
 		usuario.DeclaronConfidencialPatrimonio = true
 	}
 
-	log.Println("response Body:", string(body))
+	//log.Println("response Body:", string(body))
 
 	getEstado(&usuario)
 	RespuestaKnn := knn(&usuario)
@@ -348,7 +344,7 @@ func handleRequest() {
 
 	http.HandleFunc("/dataset", mostrarDataset)
 	http.HandleFunc("/knn", realizarKnn)
-	log.Fatal(http.ListenAndServe(":9000", nil))
+	log.Fatal(http.ListenAndServe(":9100", nil))
 
 }
 
