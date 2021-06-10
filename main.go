@@ -205,12 +205,29 @@ func calculaDistancia(k *knnNode, x int, y int, p ConsultaBono) {
 	k.y = p.PuntajePersonal
 	k.estado = p.Estado
 }
+func canal(chDistancia chan float64, chY chan int, chEstado chan string, chX chan int, x int, y int, p ConsultaBono) {
+	absX := math.Abs(float64(x - p.PuntajeEmpresa))
+	absY := math.Abs(float64(y - p.PuntajePersonal))
+	distancia := math.Sqrt(math.Pow(absX, 2) + math.Pow(absY, 2))
+
+	chDistancia <- distancia
+	chY <- p.PuntajeEmpresa
+	chX <- p.PuntajePersonal
+	chEstado <- p.Estado
+}
 
 func knn(usuario *ConsultaBono) bool {
 	var getPoints = [100]knnNode{}
-
+	chDistancia := make(chan float64)
+	chY := make(chan int)
+	chX := make(chan int)
+	chEstado := make(chan string)
 	for i := 0; i < 100; i++ {
-		calculaDistancia(&getPoints[i], usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
+		go canal(chDistancia, chY, chEstado, chX, usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
+		getPoints[i].Distancia = <-chDistancia
+		getPoints[i].y = <-chY
+		getPoints[i].x = <-chX
+		getPoints[i].estado = <-chEstado
 	}
 	log.Println(getPoints)
 	for i := 1; i < 100; i++ {
@@ -344,7 +361,7 @@ func handleRequest() {
 
 	http.HandleFunc("/dataset", mostrarDataset)
 	http.HandleFunc("/knn", realizarKnn)
-	log.Fatal(http.ListenAndServe(":9100", nil))
+	log.Fatal(http.ListenAndServe(":9200", nil))
 
 }
 
