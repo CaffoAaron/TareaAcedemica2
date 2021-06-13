@@ -205,7 +205,7 @@ func calculaDistancia(k *knnNode, x int, y int, p ConsultaBono) {
 	k.y = p.PuntajePersonal
 	k.estado = p.Estado
 }
-func canal(chDistancia chan float64, chY chan int, chEstado chan string, chX chan int, x int, y int, p ConsultaBono) {
+func calculaDistanciaAsincrono(chDistancia chan float64, chY chan int, chEstado chan string, chX chan int, x int, y int, p ConsultaBono) {
 	absX := math.Abs(float64(x - p.PuntajeEmpresa))
 	absY := math.Abs(float64(y - p.PuntajePersonal))
 	distancia := math.Sqrt(math.Pow(absX, 2) + math.Pow(absY, 2))
@@ -217,30 +217,30 @@ func canal(chDistancia chan float64, chY chan int, chEstado chan string, chX cha
 }
 
 func knn(usuario *ConsultaBono) bool {
-	var getPoints = [100]knnNode{}
+	var knnNodes = [100]knnNode{}
 	chDistancia := make(chan float64)
 	chY := make(chan int)
 	chX := make(chan int)
 	chEstado := make(chan string)
 	for i := 0; i < 100; i++ {
-		go canal(chDistancia, chY, chEstado, chX, usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
-		getPoints[i].Distancia = <-chDistancia
-		getPoints[i].y = <-chY
-		getPoints[i].x = <-chX
-		getPoints[i].estado = <-chEstado
+		go calculaDistanciaAsincrono(chDistancia, chY, chEstado, chX, usuario.PuntajeEmpresa, usuario.PuntajePersonal, Dataset[i])
+		knnNodes[i].Distancia = <-chDistancia
+		knnNodes[i].y = <-chY
+		knnNodes[i].x = <-chX
+		knnNodes[i].estado = <-chEstado
 	}
-	log.Println(getPoints)
+	log.Println(knnNodes)
 	for i := 1; i < 100; i++ {
 		for j := 0; j < 100-i; j++ {
-			if getPoints[j].Distancia > getPoints[j+1].Distancia {
-				getPoints[j], getPoints[j+1] = getPoints[j+1], getPoints[j]
+			if knnNodes[j].Distancia > knnNodes[j+1].Distancia {
+				knnNodes[j], knnNodes[j+1] = knnNodes[j+1], knnNodes[j]
 			}
 		}
 	}
-	log.Println(getPoints)
+	log.Println(knnNodes)
 	count := 0
 	for i := 0; i < 6; i++ {
-		if getPoints[i].estado == "Pre-Aprobado" {
+		if knnNodes[i].estado == "Pre-Aprobado" {
 			count++
 		}
 	}
